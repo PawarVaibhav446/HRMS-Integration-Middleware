@@ -21,6 +21,8 @@ public class EventPublisher {
                 request
         );
 
+
+
         System.out.println("Published event with routing key: " + routingKey);
     }
 }

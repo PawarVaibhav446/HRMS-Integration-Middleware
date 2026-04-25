@@ -1,6 +1,10 @@
 package com.vaibhav.hrms.middleware.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,51 +13,56 @@ public class RabbitMQConfig {
 
     public static final String EXCHANGE_NAME = "hrms.exchange";
 
-    public static final String IDAM_QUEUE = "idam.queue";
-    public static final String CRM_QUEUE = "crm.queue";
-    public static final String CMS_QUEUE = "cms.queue";
-
     @Bean
     public TopicExchange exchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
     @Bean
+    public MessageConverter messageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
     public Queue idamQueue() {
-        return new Queue(IDAM_QUEUE);
+        return new Queue("idam.queue");
     }
 
     @Bean
     public Queue crmQueue() {
-        return new Queue(CRM_QUEUE);
+        return new Queue("crm.queue");
     }
 
     @Bean
     public Queue cmsQueue() {
-        return new Queue(CMS_QUEUE);
+        return new Queue("cms.queue");
     }
 
     @Bean
-    public Binding idamBinding() {
-        return BindingBuilder
-                .bind(idamQueue())
-                .to(exchange())
+    public Binding idamBinding(Queue idamQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(idamQueue)
+                .to(exchange)
                 .with("employee.*");
     }
 
     @Bean
-    public Binding crmBinding() {
-        return BindingBuilder
-                .bind(crmQueue())
-                .to(exchange())
+    public Binding crmBinding(Queue crmQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(crmQueue)
+                .to(exchange)
                 .with("employee.created");
     }
 
     @Bean
-    public Binding cmsBinding() {
-        return BindingBuilder
-                .bind(cmsQueue())
-                .to(exchange())
-                .with("employee.deleted");
+    public Binding cmsBinding(Queue cmsQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(cmsQueue)
+                .to(exchange)
+                .with("employee.*");
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setMessageConverter(messageConverter());
+        return template;
     }
 }
