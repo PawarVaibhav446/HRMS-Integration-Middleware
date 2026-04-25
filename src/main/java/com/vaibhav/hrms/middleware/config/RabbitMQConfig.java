@@ -25,7 +25,19 @@ public class RabbitMQConfig {
 
     @Bean
     public Queue idamQueue() {
-        return new Queue("idam.queue");
+        return QueueBuilder.durable("idam.queue")
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", "idam.retry.queue")
+                .build();
+    }
+
+    @Bean
+    public Queue idamRetryQueue() {
+        return QueueBuilder.durable("idam.retry.queue")
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", "idam.queue")
+                .withArgument("x-message-ttl", 5000)
+                .build();
     }
 
     @Bean
@@ -57,6 +69,11 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(cmsQueue)
                 .to(exchange)
                 .with("employee.*");
+    }
+
+    @Bean
+    public Queue idamDLQ() {
+        return new Queue("idam.dlq");
     }
 
     @Bean
